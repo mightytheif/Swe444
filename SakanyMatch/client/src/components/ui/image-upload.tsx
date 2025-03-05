@@ -53,34 +53,44 @@ export function ImageUpload({
 
     const fileName = `${Date.now()}-${file.name}`;
     const storageRef = ref(storage, `property-images/${fileName}`);
-    const uploadTask = uploadBytesResumable(storageRef, file);
+    try {
+      const uploadTask = uploadBytesResumable(storageRef, file);
 
-    uploadTask.on(
-      "state_changed",
-      (snapshot) => {
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setUploadProgress(progress);
-      },
-      (error) => {
-        console.error("Upload error:", error);
-        toast({
-          title: "Upload failed",
-          description: "There was an error uploading your image",
-          variant: "destructive",
-        });
-        setIsUploading(false);
-      },
-      () => {
-        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-          onUpload(downloadURL);
-          setIsUploading(false);
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(progress);
+        },
+        (error) => {
+          console.error("Upload error:", error);
           toast({
-            title: "Upload successful",
-            description: "Image has been uploaded successfully",
+            title: "Upload failed",
+            description: "There was an error uploading your image",
+            variant: "destructive",
           });
-        });
-      }
-    );
+          setIsUploading(false);
+        },
+        () => {
+          getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+            onUpload(downloadURL);
+            setIsUploading(false);
+            toast({
+              title: "Upload successful",
+              description: "Image has been uploaded successfully",
+            });
+          });
+        }
+      );
+    } catch (err) {
+      console.error("Failed to initialize upload:", err);
+      toast({
+        title: "Upload initialization failed",
+        description: "Could not start the upload process",
+        variant: "destructive",
+      });
+      setIsUploading(false);
+    }
   };
 
   return (
