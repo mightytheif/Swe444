@@ -1,3 +1,4 @@
+
 import { initializeApp, cert } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
@@ -14,6 +15,9 @@ const firebaseConfig = {
   appId: "1:894759727168:web:28add29944f36f4f6d6fa5",
   measurementId: "G-0DL7TMSE7P",
 };
+
+// Initialize the app
+const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
