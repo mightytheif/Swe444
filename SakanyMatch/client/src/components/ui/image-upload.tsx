@@ -1,29 +1,27 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
+import { Upload, Loader2 } from "lucide-react";
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Button } from "./button";
-import { Loader2, X, ImagePlus } from "lucide-react";
-import { getStorage, ref, uploadBytes, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { useToast } from "@/hooks/use-toast";
 
 interface ImageUploadProps {
   onUpload: (url: string) => void;
-  onRemove?: () => void;
-  currentImageUrl?: string;
   disabled?: boolean;
+  className?: string;
 }
 
 export function ImageUpload({
   onUpload,
-  onRemove,
-  currentImageUrl,
   disabled = false,
+  className,
 }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
   const { toast } = useToast();
+  const storage = getStorage();
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (!file) return;
 
     // Validate file type
@@ -37,190 +35,96 @@ export function ImageUpload({
     }
 
     // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.size > maxSize) {
+    if (file.size > 5 * 1024 * 1024) {
       toast({
         title: "File too large",
-        description: "Please upload an image smaller than 5MB",
+        description: "Image size should be less than 5MB",
         variant: "destructive",
       });
       return;
     }
 
+    uploadImage(file);
+  };
+
+  const uploadImage = (file: File) => {
     setIsUploading(true);
     setUploadProgress(0);
 
-    try {
-      // Create a unique file name with timestamp
-      const fileName = `property-images/${Date.now()}-${file.name}`;
-      const storageRef = ref(getStorage(), fileName);
+    const fileName = `${Date.now()}-${file.name}`;
+    const storageRef = ref(storage, `property-images/${fileName}`);
+    const uploadTask = uploadBytesResumable(storageRef, file);
 
-      // Upload the file
-      await uploadBytes(storageRef, file);
-
-      // Get download URL
-      const downloadUrl = await getDownloadURL(storageRef);
-
-      // Set preview and call onUpload callback
-      setPreviewUrl(downloadUrl);
-      onUpload(downloadUrl);
-
-      toast({
-        title: "Image uploaded",
-        description: "The image has been uploaded successfully",
-      });
-    } catch (error: any) {
-      console.error('Upload error:', error);
-      toast({
-        title: "Upload failed",
-        description: error.message || "Failed to upload image",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
-    }
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setUploadProgress(progress);
+      },
+      (error) => {
+        console.error("Upload error:", error);
+        toast({
+          title: "Upload failed",
+          description: "There was an error uploading your image",
+          variant: "destructive",
+        });
+        setIsUploading(false);
+      },
+      () => {
+        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+          onUpload(downloadURL);
+          setIsUploading(false);
+          toast({
+            title: "Upload successful",
+            description: "Image has been uploaded successfully",
+          });
+        });
+      }
+    );
   };
 
-  const handleUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      setIsUploading(true);
-
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        throw new Error('Only image files are allowed');
-      }
-
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        throw new Error('Image size should not exceed 5MB');
-      }
-
-      // Create a unique file name with timestamp
-      const fileName = `property-images/${Date.now()}-${file.name}`;
-      const storageRef = ref(getStorage(), fileName);
-
-      // Upload the file
-      await uploadBytes(storageRef, file);
-
-      // Get download URL
-      const downloadUrl = await getDownloadURL(storageRef);
-
-      // Set preview and call onUpload callback
-      setPreviewUrl(downloadUrl);
-      onUpload(downloadUrl);
-
-      toast({
-        title: "Image uploaded",
-        description: "The image has been uploaded successfully",
-      });
-    } catch (error: any) {
-      console.error('Upload error:', error);
-      toast({
-        title: "Upload failed",
-        description: error.message || "Failed to upload image",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
-    }
-  }, [onUpload, toast]);
-
-  const handleRemove = useCallback(() => {
-    setPreviewUrl(null);
-    if (onRemove) onRemove();
-  }, [onRemove]);
-
-  if (currentImageUrl && previewUrl === null) {
-    return (
-      <div className="relative rounded-md overflow-hidden border border-border aspect-square">
-        <img
-          src={currentImageUrl}
-          alt="Property image"
-          className="w-full h-full object-cover"
-        />
-        {onRemove && (
-          <Button
-            type="button"
-            variant="destructive"
-            size="icon"
-            className="absolute top-2 right-2 h-8 w-8 rounded-full"
-            onClick={onRemove}
-            disabled={disabled}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
-    );
-  }
-
-  if (previewUrl) {
-    return (
-      <div className="relative rounded-md overflow-hidden border border-border">
-        <img
-          src={previewUrl}
-          alt="Property"
-          className="w-full h-48 object-cover"
-        />
-        <Button
-          type="button"
-          size="icon"
-          variant="destructive"
-          className="absolute top-2 right-2"
-          onClick={handleRemove}
-          disabled={disabled}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
-    );
-  }
-
   return (
-    <div className="w-full">
+    <div className={`flex flex-col items-center justify-center border-2 border-dashed rounded-md p-6 h-full ${className}`}>
+      <input
+        type="file"
+        accept="image/*"
+        id="image-upload"
+        className="hidden"
+        onChange={handleFileChange}
+        disabled={disabled || isUploading}
+      />
+
       {isUploading ? (
-        <div className="flex flex-col items-center justify-center py-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
-          <p className="text-sm text-muted-foreground">
-            Uploading... {uploadProgress}%
-          </p>
+        <div className="flex flex-col items-center justify-center gap-2">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="text-center">
+            <div className="text-sm font-medium">Uploading...</div>
+            <div className="text-xs text-muted-foreground">{Math.round(uploadProgress)}%</div>
+          </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-border rounded-md">
-          <div className="mb-2">
-            <ImagePlus className="h-10 w-10 text-muted-foreground" />
+        <label
+          htmlFor="image-upload"
+          className="flex flex-col items-center justify-center cursor-pointer gap-2"
+        >
+          <Upload className="h-8 w-8 text-muted-foreground" />
+          <div className="text-center">
+            <div className="text-sm font-medium">Click to upload</div>
+            <div className="text-xs text-muted-foreground">
+              JPG, PNG, GIF (max 5MB)
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground mb-2">
-            Click to upload an image
-          </p>
-          <div className="relative">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isUploading || disabled}
-              className="relative"
-            >
-              {isUploading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                "Select Image"
-              )}
-              <input
-                type="file"
-                accept="image/*"
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                onChange={handleUpload}
-                disabled={isUploading || disabled}
-              />
-            </Button>
-          </div>
-        </div>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={disabled}
+            className="mt-2"
+            onClick={() => document.getElementById('image-upload')?.click()}
+          >
+            Select Image
+          </Button>
+        </label>
       )}
     </div>
   );
