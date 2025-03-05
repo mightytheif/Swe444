@@ -140,3 +140,83 @@ export function PropertyCard({
     </Card>
   );
 }
+import { Property } from "@shared/schema";
+import { Badge } from "./badge";
+import { Card, CardContent, CardHeader } from "./card";
+import { Link } from "wouter";
+import { Building2, MapPin, Bath, BedDouble, Square } from "lucide-react";
+
+interface PropertyCardProps {
+  property: Property;
+}
+
+export function PropertyCard({ property }: PropertyCardProps) {
+  // Format the price with commas for thousands
+  const formattedPrice = new Intl.NumberFormat("en-SA", {
+    style: "currency",
+    currency: "SAR",
+    maximumFractionDigits: 0,
+  }).format(property.price);
+
+  return (
+    <Link href={`/property/${property.id}`}>
+      <Card className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
+        <div className="relative aspect-video">
+          {property.status !== "active" && (
+            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
+              <span className="px-3 py-1 rounded-full text-sm font-bold text-white uppercase">
+                {property.status}
+              </span>
+            </div>
+          )}
+          <img
+            src={property.images?.[0] || "https://placehold.co/800x600?text=No+Image"}
+            alt={property.title}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute top-2 left-2 flex gap-2">
+            {property.featured && (
+              <Badge className="bg-yellow-500">Featured</Badge>
+            )}
+            {property.forSale && (
+              <Badge className="bg-blue-500">For Sale</Badge>
+            )}
+            {property.forRent && (
+              <Badge className="bg-green-500">For Rent</Badge>
+            )}
+          </div>
+        </div>
+        <CardHeader className="pb-2">
+          <h3 className="text-lg font-semibold line-clamp-1">{property.title}</h3>
+          <div className="flex items-center text-sm text-muted-foreground">
+            <MapPin className="h-4 w-4 mr-1" />
+            <span className="line-clamp-1">{property.location}</span>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-between items-center mb-3">
+            <p className="text-xl font-bold text-primary">{formattedPrice}</p>
+            <Badge variant="outline" className="capitalize">
+              <Building2 className="h-3 w-3 mr-1" />
+              {property.propertyType}
+            </Badge>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center">
+              <BedDouble className="h-4 w-4 mr-1" />
+              <span>{property.bedrooms} Beds</span>
+            </div>
+            <div className="flex items-center">
+              <Bath className="h-4 w-4 mr-1" />
+              <span>{property.bathrooms} Baths</span>
+            </div>
+            <div className="flex items-center">
+              <Square className="h-4 w-4 mr-1" />
+              <span>{property.area} m²</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}

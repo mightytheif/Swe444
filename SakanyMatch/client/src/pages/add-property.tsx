@@ -68,6 +68,10 @@ export default function AddProperty() {
       forSale: true,
       forRent: false,
       featured: false,
+      availabilityDate: new Date(),
+      sellerContact: user?.email || "",
+      sellerName: "",
+      sellerPhone: "",
     },
   });
 

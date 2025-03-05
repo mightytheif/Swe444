@@ -104,3 +104,35 @@ export type Property = typeof properties.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type InsertMessage = typeof messages.$inferInsert;
 export type Conversation = typeof conversations.$inferSelect;
+import { z } from "zod";
+
+export const propertySchema = z.object({
+  title: z.string().min(5, "Title must be at least 5 characters"),
+  description: z.string().min(10, "Description must be at least 10 characters"),
+  price: z.coerce.number().min(1, "Price must be greater than 0"),
+  location: z.string().min(3, "Location must be at least 3 characters"),
+  bedrooms: z.coerce.number().min(0, "Bedrooms must be 0 or more"),
+  bathrooms: z.coerce.number().min(0, "Bathrooms must be 0 or more"),
+  area: z.coerce.number().min(1, "Area must be greater than 0"),
+  propertyType: z.enum(["apartment", "house", "villa", "studio", "land", "commercial"]),
+  forSale: z.boolean().default(false),
+  forRent: z.boolean().default(false),
+  featured: z.boolean().default(false),
+  availabilityDate: z.date().optional(),
+  sellerName: z.string().optional(),
+  sellerPhone: z.string().optional(),
+  sellerContact: z.string().email("Invalid email address").optional(),
+}).refine(data => data.forSale || data.forRent, {
+  message: "Property must be either for sale or for rent",
+  path: ["forSale"],
+});
+
+export type Property = z.infer<typeof propertySchema> & {
+  id: string;
+  userId: string;
+  userEmail: string;
+  createdAt: any;
+  updatedAt: any;
+  images: string[];
+  status: string;
+};

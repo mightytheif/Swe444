@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { doc, getDoc, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
@@ -26,7 +25,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bed, Bath, Grid, MapPin, Tag, Ruler, Calendar, User, Phone, Mail, Edit, Trash2, Flag, CheckCircle, Home, DollarSign, Loader2 } from "lucide-react";
+import { Bed, Bath, Grid, MapPin, Tag, Ruler, Calendar, User, Phone, Mail, Edit, Trash2, Flag, CheckCircle, Home, DollarSign, Loader2, Building2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface PropertyData {
@@ -48,6 +47,9 @@ interface PropertyData {
   updatedAt: any;
   images: string[];
   status: string;
+  sellerName?: string;
+  sellerPhone?: string;
+  sellerContact?: string;
 }
 
 export default function PropertyPage() {
@@ -98,62 +100,38 @@ export default function PropertyPage() {
   }, [params?.id, setLocation, toast]);
 
   const handleMarkAsSold = async () => {
-    if (!property) return;
-    
-    setIsSubmitting(true);
-    try {
-      const propertyRef = doc(db, "properties", property.id);
-      await updateDoc(propertyRef, {
-        status: "sold",
-        updatedAt: serverTimestamp(),
-      });
-      
-      setProperty({
-        ...property,
-        status: "sold",
-      });
-      
-      toast({
-        title: "Property Updated",
-        description: "The property has been marked as sold",
-      });
-    } catch (error: any) {
-      console.error("Error updating property:", error);
-      toast({
-        title: "Update Failed",
-        description: error.message || "Failed to update property",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    await handleStatusChange("sold");
   };
 
   const handleMarkAsRented = async () => {
-    if (!property) return;
-    
+    await handleStatusChange("rented");
+  };
+
+  const handleStatusChange = async (newStatus: string) => {
+    if (!canEdit) return;
+
     setIsSubmitting(true);
     try {
       const propertyRef = doc(db, "properties", property.id);
       await updateDoc(propertyRef, {
-        status: "rented",
+        status: newStatus,
         updatedAt: serverTimestamp(),
       });
-      
+
       setProperty({
         ...property,
-        status: "rented",
+        status: newStatus,
       });
-      
+
       toast({
-        title: "Property Updated",
-        description: "The property has been marked as rented",
+        title: "Status Updated",
+        description: `Property is now marked as ${newStatus}`,
       });
-    } catch (error: any) {
-      console.error("Error updating property:", error);
+    } catch (error) {
+      console.error("Error updating property status:", error);
       toast({
         title: "Update Failed",
-        description: error.message || "Failed to update property",
+        description: "There was a problem updating the property status",
         variant: "destructive",
       });
     } finally {
@@ -163,17 +141,17 @@ export default function PropertyPage() {
 
   const handleDeleteProperty = async () => {
     if (!property) return;
-    
+
     setIsSubmitting(true);
     try {
       const propertyRef = doc(db, "properties", property.id);
       await deleteDoc(propertyRef);
-      
+
       toast({
         title: "Property Deleted",
         description: "The property has been permanently deleted",
       });
-      
+
       setLocation("/properties");
     } catch (error: any) {
       console.error("Error deleting property:", error);
@@ -217,7 +195,7 @@ export default function PropertyPage() {
   // Format dates
   const formatDate = (timestamp: any) => {
     if (!timestamp) return "N/A";
-    
+
     try {
       const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
       return new Intl.DateTimeFormat("en-US", {
@@ -248,20 +226,20 @@ export default function PropertyPage() {
                 </span>
               </div>
             )}
-            
+
             <img
               src={activeImage || "https://placehold.co/800x600?text=No+Image"}
               alt={property.title}
               className="w-full h-full object-cover"
             />
-            
+
             {property.featured && (
               <Badge className="absolute top-4 left-4 z-10 bg-yellow-500">
                 Featured
               </Badge>
             )}
           </div>
-          
+
           {/* Image Thumbnails */}
           {property.images && property.images.length > 0 && (
             <div className="grid grid-cols-5 gap-2">
@@ -282,7 +260,7 @@ export default function PropertyPage() {
               ))}
             </div>
           )}
-          
+
           {/* Property Details Tabs */}
           <Tabs defaultValue="details">
             <TabsList className="grid grid-cols-3">
@@ -290,13 +268,13 @@ export default function PropertyPage() {
               <TabsTrigger value="features">Features</TabsTrigger>
               <TabsTrigger value="contact">Contact</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="details" className="py-4">
               <h2 className="text-xl font-semibold mb-4">About This Property</h2>
               <p className="text-muted-foreground whitespace-pre-line">
                 {property.description}
               </p>
-              
+
               <div className="mt-6 grid grid-cols-2 gap-4">
                 <div className="flex items-center">
                   <Calendar className="h-5 w-5 mr-2 text-primary" />
@@ -305,7 +283,7 @@ export default function PropertyPage() {
                     <p className="font-medium">{formatDate(property.createdAt)}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center">
                   <Tag className="h-5 w-5 mr-2 text-primary" />
                   <div>
@@ -315,10 +293,10 @@ export default function PropertyPage() {
                 </div>
               </div>
             </TabsContent>
-            
+
             <TabsContent value="features" className="py-4">
               <h2 className="text-xl font-semibold mb-4">Property Features</h2>
-              
+
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div className="flex items-center p-3 border rounded-md">
                   <Bed className="h-5 w-5 mr-2 text-primary" />
@@ -327,7 +305,7 @@ export default function PropertyPage() {
                     <p className="font-medium">{property.bedrooms}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center p-3 border rounded-md">
                   <Bath className="h-5 w-5 mr-2 text-primary" />
                   <div>
@@ -335,7 +313,7 @@ export default function PropertyPage() {
                     <p className="font-medium">{property.bathrooms}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center p-3 border rounded-md">
                   <Ruler className="h-5 w-5 mr-2 text-primary" />
                   <div>
@@ -343,7 +321,7 @@ export default function PropertyPage() {
                     <p className="font-medium">{property.area} sqm</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center p-3 border rounded-md">
                   <Home className="h-5 w-5 mr-2 text-primary" />
                   <div>
@@ -351,7 +329,7 @@ export default function PropertyPage() {
                     <p className="font-medium capitalize">{property.propertyType}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center p-3 border rounded-md">
                   <DollarSign className="h-5 w-5 mr-2 text-primary" />
                   <div>
@@ -359,7 +337,7 @@ export default function PropertyPage() {
                     <p className="font-medium">{property.forSale ? "Yes" : "No"}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center p-3 border rounded-md">
                   <DollarSign className="h-5 w-5 mr-2 text-primary" />
                   <div>
@@ -369,37 +347,62 @@ export default function PropertyPage() {
                 </div>
               </div>
             </TabsContent>
-            
+
             <TabsContent value="contact" className="py-4">
               <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
-              
               <div className="space-y-4">
-                <div className="flex items-center">
-                  <User className="h-5 w-5 mr-2 text-primary" />
+                <div>
+                  <h3 className="font-medium">Owner/Agent Email:</h3>
+                  <p className="text-muted-foreground">{property.userEmail}</p>
+                </div>
+
+                {property.sellerName && (
                   <div>
-                    <p className="text-sm text-muted-foreground">Listed by</p>
-                    <p className="font-medium">{property.userEmail}</p>
+                    <h3 className="font-medium">Contact Person:</h3>
+                    <p className="text-muted-foreground">{property.sellerName}</p>
                   </div>
-                </div>
-                
-                <div className="flex items-center">
-                  <Mail className="h-5 w-5 mr-2 text-primary" />
+                )}
+
+                {property.sellerPhone && (
                   <div>
-                    <p className="text-sm text-muted-foreground">Email</p>
-                    <a href={`mailto:${property.userEmail}`} className="font-medium text-primary hover:underline">
-                      {property.userEmail}
-                    </a>
+                    <h3 className="font-medium">Phone Number:</h3>
+                    <p className="text-muted-foreground">{property.sellerPhone}</p>
                   </div>
-                </div>
-                
-                <div className="mt-6">
-                  <Button className="w-full">Contact Seller</Button>
-                </div>
+                )}
+
+                {property.sellerContact && property.sellerContact !== property.userEmail && (
+                  <div>
+                    <h3 className="font-medium">Alternative Email:</h3>
+                    <p className="text-muted-foreground">{property.sellerContact}</p>
+                  </div>
+                )}
+
+                {property.forSale && (
+                  <div className="p-4 bg-blue-50 rounded-lg mt-6">
+                    <h3 className="font-medium text-blue-800 mb-2">
+                      This property is for sale
+                    </h3>
+                    <p className="text-blue-700 text-sm">
+                      Contact the seller for more information about purchasing this property.
+                    </p>
+                  </div>
+                )}
+
+                {property.forRent && (
+                  <div className="p-4 bg-green-50 rounded-lg mt-2">
+                    <h3 className="font-medium text-green-800 mb-2">
+                      This property is available for rent
+                    </h3>
+                    <p className="text-green-700 text-sm">
+                      Contact the owner for rental terms and viewing appointments.
+                    </p>
+                  </div>
+                )}
               </div>
             </TabsContent>
           </Tabs>
         </div>
-        
+
         {/* Property Summary */}
         <div className="space-y-4">
           <Card>
@@ -412,45 +415,45 @@ export default function PropertyPage() {
                 </div>
               </CardDescription>
             </CardHeader>
-            
+
             <CardContent>
               <div className="text-3xl font-bold text-primary mb-4">
                 {formattedPrice}
               </div>
-              
+
               <div className="flex flex-wrap gap-2 mb-4">
                 <Badge variant="outline" className="flex items-center gap-1">
                   <Bed className="h-3 w-3" />
                   {property.bedrooms} Beds
                 </Badge>
-                
+
                 <Badge variant="outline" className="flex items-center gap-1">
                   <Bath className="h-3 w-3" />
                   {property.bathrooms} Baths
                 </Badge>
-                
+
                 <Badge variant="outline" className="flex items-center gap-1">
                   <Ruler className="h-3 w-3" />
                   {property.area} sqm
                 </Badge>
               </div>
-              
+
               <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>ID: {property.id.substring(0, 8)}</span>
                 <span>Updated: {formatDate(property.updatedAt)}</span>
               </div>
             </CardContent>
-            
+
             <CardFooter className="flex flex-col gap-2">
               <Button className="w-full">Contact Seller</Button>
-              
+
               {canEdit && (
                 <div className="w-full grid grid-cols-2 gap-2 mt-2">
                   <Button variant="outline" onClick={() => setLocation(`/edit-property/${property.id}`)}>
                     <Edit className="h-4 w-4 mr-2" />
                     Edit
                   </Button>
-                  
+
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="destructive">
@@ -487,43 +490,58 @@ export default function PropertyPage() {
                   </AlertDialog>
                 </div>
               )}
-              
-              {canEdit && property.status === "active" && (
+
+              {canEdit && (
                 <div className="w-full grid grid-cols-2 gap-2 mt-2">
-                  {property.forSale && (
-                    <Button 
-                      variant="secondary" 
-                      onClick={handleMarkAsSold}
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                      )}
-                      Mark as Sold
-                    </Button>
-                  )}
-                  
-                  {property.forRent && (
-                    <Button 
-                      variant="secondary" 
-                      onClick={handleMarkAsRented}
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                      )}
-                      Mark as Rented
-                    </Button>
-                  )}
+                  <div className="flex items-center">
+                    <Building2 className="h-5 w-5 mr-2 text-primary" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Status</p>
+                      <p className="font-medium capitalize">{property.status}</p>
+                    </div>
+                  </div>
+                  <div className="col-span-2 mt-4 p-4 bg-muted rounded-lg">
+                    <h3 className="font-medium mb-2">Manage Property Status</h3>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant={property.status === "active" ? "default" : "outline"}
+                        onClick={() => handleStatusChange("active")}
+                        disabled={isSubmitting || property.status === "active"}
+                      >
+                        Active
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={property.status === "sold" ? "default" : "outline"}
+                        onClick={() => handleStatusChange("sold")}
+                        disabled={isSubmitting || property.status === "sold" || !property.forSale}
+                      >
+                        Sold
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={property.status === "rented" ? "default" : "outline"}
+                        onClick={() => handleStatusChange("rented")}
+                        disabled={isSubmitting || property.status === "rented" || !property.forRent}
+                      >
+                        Rented
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={property.status === "inactive" ? "default" : "outline"}
+                        onClick={() => handleStatusChange("inactive")}
+                        disabled={isSubmitting || property.status === "inactive"}
+                      >
+                        Inactive
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               )}
             </CardFooter>
           </Card>
-          
+
           {/* Flag Property */}
           <Card>
             <CardHeader className="pb-2">
