@@ -24,7 +24,7 @@ export function Navbar() {
     <header className="border-b">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/">
-          <a className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <img 
               src="/assets/logo.png" 
               alt="SAKANY Logo" 
@@ -34,7 +34,7 @@ export function Navbar() {
                 console.error('Error loading logo image');
               }}
             />
-          </a>
+          </div>
         </Link>
 
         <NavigationMenu>
