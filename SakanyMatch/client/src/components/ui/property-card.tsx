@@ -33,6 +33,13 @@ export function PropertyCard({ property }: PropertyCardProps) {
           <span className="text-sm">{property.location}</span>
         </div>
 
+        <div className="flex justify-between items-center mb-2">
+          <Badge variant={property.listingType === 'sale' ? 'destructive' : 'default'}>
+            {property.listingType === 'sale' ? 'For Sale' : 'For Rent'}
+          </Badge>
+          <span className="text-sm">{property.area} m²</span>
+        </div>
+
         <div className="flex gap-4 text-sm text-muted-foreground">
           <div className="flex items-center">
             <Bed size={16} className="mr-1" />

@@ -36,6 +36,7 @@ const propertySchema = z.object({
   area: z.coerce.number().min(1, "Area must be greater than 0 square meters"),
   type: z.enum(["house", "apartment"]),
   images: z.array(z.string()).min(1, "At least one image is required"),
+  listingType: z.enum(["rent", "sale"]),
 });
 
 type PropertyForm = z.infer<typeof propertySchema>;
@@ -57,6 +58,7 @@ export default function AddProperty() {
       area: 0,
       type: "apartment",
       images: [],
+      listingType: "sale", // Default to "sale"
     },
   });
 
@@ -204,17 +206,39 @@ export default function AddProperty() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Property Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
+                  <FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select property type" />
                       </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="apartment">Apartment</SelectItem>
-                      <SelectItem value="house">House</SelectItem>
-                    </SelectContent>
-                  </Select>
+                      <SelectContent>
+                        <SelectItem value="apartment">Apartment</SelectItem>
+                        <SelectItem value="house">House</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="listingType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Listing Type</FormLabel>
+                  <FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a listing type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="rent">For Rent</SelectItem>
+                        <SelectItem value="sale">For Sale</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

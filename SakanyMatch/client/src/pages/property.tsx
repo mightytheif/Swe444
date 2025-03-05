@@ -22,9 +22,14 @@ export default function PropertyPage({ params: { id } }: { params: { id: string 
           <div className="flex items-center gap-2 mb-6">
             <MapPin className="text-muted-foreground" />
             <span>{property.location}</span>
-            <Badge variant="secondary" className="ml-auto">
-              {property.price.toLocaleString()} SAR
-            </Badge>
+            <div className="ml-auto flex gap-2">
+              <Badge variant={property.listingType === 'sale' ? 'destructive' : 'default'}>
+                {property.listingType === 'sale' ? 'For Sale' : 'For Rent'}
+              </Badge>
+              <Badge variant="secondary">
+                {property.price.toLocaleString()} SAR
+              </Badge>
+            </div>
           </div>
 
           <div className="aspect-[16/9] mb-6 overflow-hidden rounded-lg">

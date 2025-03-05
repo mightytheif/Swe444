@@ -171,3 +171,114 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
     </div>
   );
 }
+import { useEffect, useState } from "react";
+import { Button } from "./button";
+import { Trash } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Client } from "@replit/extensions";
+
+interface ImageUploadProps {
+  value: string[];
+  onChange: (urls: string[]) => void;
+  onRemove: (url: string) => void;
+}
+
+export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
+  const [isMounted, setIsMounted] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    setIsUploading(true);
+    
+    try {
+      const files = Array.from(e.target.files);
+      const uploadedUrls: string[] = [];
+      
+      const client = new Client();
+      const storage = client.storage;
+      
+      for (const file of files) {
+        // Generate a unique file name to avoid collisions
+        const fileName = `${Date.now()}-${file.name}`;
+        
+        // Upload file to Replit Object Storage
+        await storage.storeFile(fileName, file);
+        
+        // Get the public URL
+        const url = await storage.getPublicURL(fileName);
+        uploadedUrls.push(url);
+      }
+      
+      onChange([...value, ...uploadedUrls]);
+      
+      toast({
+        title: "Success",
+        description: "Images uploaded successfully",
+      });
+    } catch (error) {
+      console.error("Error uploading images:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upload images",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+      if (e.target) {
+        e.target.value = "";
+      }
+    }
+  };
+
+  if (!isMounted) return null;
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 gap-4">
+        {value.map((url) => (
+          <div key={url} className="relative aspect-square rounded-md overflow-hidden">
+            <img 
+              src={url} 
+              alt="Property image"
+              className="object-cover w-full h-full"
+            />
+            <Button
+              type="button"
+              size="icon"
+              variant="destructive"
+              className="absolute top-2 right-2"
+              onClick={() => onRemove(url)}
+            >
+              <Trash className="h-4 w-4" />
+            </Button>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center">
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={isUploading}
+          className="relative"
+        >
+          {isUploading ? "Uploading..." : "Upload Images"}
+          <input
+            type="file"
+            className="absolute inset-0 opacity-0 cursor-pointer"
+            onChange={onUpload}
+            accept="image/*"
+            multiple
+            disabled={isUploading}
+          />
+        </Button>
+      </div>
+    </div>
+  );
+}
