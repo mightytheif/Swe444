@@ -7,3 +7,7 @@ channel = "stable-24_05"
 
 [deployment]
 run = ["sh", "-c", "cd SakanyMatch && npm run start"]
+
+[[ports]]
+localPort = 5000
+externalPort = 80
