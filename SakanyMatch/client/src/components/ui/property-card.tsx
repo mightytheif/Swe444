@@ -1,4 +1,3 @@
-
 import { Link } from "wouter";
 import { Bed, Bath, Grid, MapPin, Tag, Ruler } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -43,8 +42,8 @@ export function PropertyCard({
   }).format(price);
 
   // Get the first image or use a placeholder
-  const primaryImage = images && images.length > 0 
-    ? images[0] 
+  const primaryImage = images && images.length > 0
+    ? images[0]
     : "https://placehold.co/600x400?text=No+Image";
 
   // Status badge color
@@ -55,8 +54,8 @@ export function PropertyCard({
     inactive: "bg-gray-100 text-gray-800",
   };
 
-  const statusColor = status && statusColors[status as keyof typeof statusColors] 
-    ? statusColors[status as keyof typeof statusColors] 
+  const statusColor = status && statusColors[status as keyof typeof statusColors]
+    ? statusColors[status as keyof typeof statusColors]
     : statusColors.active;
 
   return (
@@ -67,7 +66,7 @@ export function PropertyCard({
             Featured
           </Badge>
         )}
-        
+
         {status !== "active" && (
           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
             <span className={`px-3 py-1 rounded-full text-sm font-medium uppercase ${statusColor}`}>
@@ -75,7 +74,7 @@ export function PropertyCard({
             </span>
           </div>
         )}
-        
+
         <Link href={`/property/${id}`}>
           <div className="h-48 overflow-hidden cursor-pointer">
             <img
@@ -85,52 +84,52 @@ export function PropertyCard({
             />
           </div>
         </Link>
-        
+
         <Badge className="absolute bottom-2 right-2 bg-primary">
           {forSale && forRent ? "Sale/Rent" : forSale ? "For Sale" : "For Rent"}
         </Badge>
       </div>
-      
+
       <CardContent className="p-4">
         <Link href={`/property/${id}`}>
           <h3 className="text-lg font-semibold mb-2 hover:text-primary cursor-pointer line-clamp-2">
             {title}
           </h3>
         </Link>
-        
+
         <div className="flex items-center text-muted-foreground mb-3">
           <MapPin className="h-4 w-4 mr-1" />
           <span className="text-sm truncate">{location}</span>
         </div>
-        
+
         <div className="text-xl font-bold text-primary mb-3">
           {formattedPrice}
         </div>
-        
+
         <div className="grid grid-cols-3 gap-2 mb-2">
           <div className="flex items-center text-sm">
             <Bed className="h-4 w-4 mr-1 text-muted-foreground" />
             <span>{bedrooms} Beds</span>
           </div>
-          
+
           <div className="flex items-center text-sm">
             <Bath className="h-4 w-4 mr-1 text-muted-foreground" />
             <span>{bathrooms} Baths</span>
           </div>
-          
+
           <div className="flex items-center text-sm">
             <Ruler className="h-4 w-4 mr-1 text-muted-foreground" />
             <span>{area} sqm</span>
           </div>
         </div>
       </CardContent>
-      
+
       <CardFooter className="px-4 py-3 border-t flex justify-between">
         <div className="flex items-center text-sm">
           <Tag className="h-4 w-4 mr-1 text-muted-foreground" />
           <span className="capitalize">{propertyType}</span>
         </div>
-        
+
         <Link href={`/property/${id}`}>
           <span className="text-sm font-medium text-primary hover:underline">
             View Details
@@ -140,83 +139,78 @@ export function PropertyCard({
     </Card>
   );
 }
-import { Property } from "@shared/schema";
-import { Badge } from "./badge";
-import { Card, CardContent, CardHeader } from "./card";
-import { Link } from "wouter";
 import { Building2, MapPin, Bath, BedDouble, Square } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Badge } from "./badge";
+import { Button } from "./button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./card";
+import { Property } from "@/types/property";
+import { Link } from "wouter";
+import { formatPrice } from "@/lib/format";
 
 interface PropertyCardProps {
   property: Property;
+  className?: string;
+  showActions?: boolean;
 }
 
-export function PropertyCard({ property }: PropertyCardProps) {
+export function PropertyCard({ 
+  property, 
+  className,
+  showActions = true 
+}: PropertyCardProps) {
   // Format the price with commas for thousands
-  const formattedPrice = new Intl.NumberFormat("en-SA", {
-    style: "currency",
-    currency: "SAR",
-    maximumFractionDigits: 0,
-  }).format(property.price);
+  const formattedPrice = formatPrice(property.price);
 
   return (
-    <Link href={`/property/${property.id}`}>
-      <Card className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
-        <div className="relative aspect-video">
-          {property.status !== "active" && (
-            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
-              <span className="px-3 py-1 rounded-full text-sm font-bold text-white uppercase">
-                {property.status}
-              </span>
-            </div>
-          )}
-          <img
-            src={property.images?.[0] || "https://placehold.co/800x600?text=No+Image"}
-            alt={property.title}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute top-2 left-2 flex gap-2">
-            {property.featured && (
-              <Badge className="bg-yellow-500">Featured</Badge>
-            )}
-            {property.forSale && (
-              <Badge className="bg-blue-500">For Sale</Badge>
-            )}
-            {property.forRent && (
-              <Badge className="bg-green-500">For Rent</Badge>
-            )}
+    <Card className={cn("overflow-hidden", className)}>
+      <div className="relative aspect-video overflow-hidden">
+        <img 
+          src={property.images && property.images.length > 0 ? property.images[0] : '/placeholder-property.jpg'} 
+          alt={property.title}
+          className="object-cover w-full h-full hover:scale-105 transition-transform"
+        />
+        <Badge className="absolute top-2 right-2">
+          {property.listingType === 'rent' ? 'For Rent' : 'For Sale'}
+        </Badge>
+      </div>
+      <CardHeader>
+        <CardTitle className="line-clamp-1">{property.title}</CardTitle>
+        <CardDescription className="flex items-center gap-1">
+          <MapPin size={14} />
+          {property.location || 'Location not specified'}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold mb-2">
+          {formattedPrice}
+          {property.listingType === 'rent' && <span className="text-sm font-normal">/month</span>}
+        </div>
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="flex items-center gap-1">
+            <BedDouble size={16} />
+            <span className="text-sm">{property.bedrooms || 0} Beds</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Bath size={16} />
+            <span className="text-sm">{property.bathrooms || 0} Baths</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Square size={16} />
+            <span className="text-sm">{property.area || 0} m²</span>
           </div>
         </div>
-        <CardHeader className="pb-2">
-          <h3 className="text-lg font-semibold line-clamp-1">{property.title}</h3>
-          <div className="flex items-center text-sm text-muted-foreground">
-            <MapPin className="h-4 w-4 mr-1" />
-            <span className="line-clamp-1">{property.location}</span>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-between items-center mb-3">
-            <p className="text-xl font-bold text-primary">{formattedPrice}</p>
-            <Badge variant="outline" className="capitalize">
-              <Building2 className="h-3 w-3 mr-1" />
-              {property.propertyType}
-            </Badge>
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-sm text-muted-foreground">
-            <div className="flex items-center">
-              <BedDouble className="h-4 w-4 mr-1" />
-              <span>{property.bedrooms} Beds</span>
-            </div>
-            <div className="flex items-center">
-              <Bath className="h-4 w-4 mr-1" />
-              <span>{property.bathrooms} Baths</span>
-            </div>
-            <div className="flex items-center">
-              <Square className="h-4 w-4 mr-1" />
-              <span>{property.area} m²</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
+        <p className="text-sm line-clamp-2 text-muted-foreground">
+          {property.description || 'No description available'}
+        </p>
+      </CardContent>
+      {showActions && (
+        <CardFooter>
+          <Button asChild className="w-full">
+            <Link to={`/property/${property.id}`}>View Details</Link>
+          </Button>
+        </CardFooter>
+      )}
+    </Card>
   );
 }
