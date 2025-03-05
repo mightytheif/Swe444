@@ -1,60 +1,142 @@
-import { Property } from "@shared/schema";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+
+import { Link } from "wouter";
+import { Bed, Bath, Grid, MapPin, Tag, Ruler } from "lucide-react";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { Bed, Bath, Square, MapPin } from "lucide-react";
 
 interface PropertyCardProps {
-  property: Property;
+  id: string;
+  title: string;
+  price: number;
+  location: string;
+  bedrooms: number;
+  bathrooms: number;
+  area: number;
+  propertyType: string;
+  forSale: boolean;
+  forRent: boolean;
+  featured?: boolean;
+  images?: string[];
+  status?: string;
 }
 
-export function PropertyCard({ property }: PropertyCardProps) {
+export function PropertyCard({
+  id,
+  title,
+  price,
+  location,
+  bedrooms,
+  bathrooms,
+  area,
+  propertyType,
+  forSale,
+  forRent,
+  featured = false,
+  images = [],
+  status = "active",
+}: PropertyCardProps) {
+  // Format the price with commas for thousands
+  const formattedPrice = new Intl.NumberFormat("en-SA", {
+    style: "currency",
+    currency: "SAR",
+    maximumFractionDigits: 0,
+  }).format(price);
+
+  // Get the first image or use a placeholder
+  const primaryImage = images && images.length > 0 
+    ? images[0] 
+    : "https://placehold.co/600x400?text=No+Image";
+
+  // Status badge color
+  const statusColors = {
+    active: "bg-green-100 text-green-800",
+    sold: "bg-red-100 text-red-800",
+    rented: "bg-blue-100 text-blue-800",
+    inactive: "bg-gray-100 text-gray-800",
+  };
+
+  const statusColor = status && statusColors[status as keyof typeof statusColors] 
+    ? statusColors[status as keyof typeof statusColors] 
+    : statusColors.active;
+
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-      <CardHeader className="p-0">
-        <AspectRatio ratio={16/9}>
-          <img 
-            src={property.images?.[0] || "https://placehold.co/600x400/e5e7eb/a3a3a3?text=No+Image"}
-            alt={property.title}
-            className="object-cover w-full h-full"
-          />
-        </AspectRatio>
-      </CardHeader>
+    <Card className="overflow-hidden transition-all duration-200 hover:shadow-md">
+      <div className="relative">
+        {featured && (
+          <Badge className="absolute top-2 left-2 z-10 bg-yellow-500">
+            Featured
+          </Badge>
+        )}
+        
+        {status !== "active" && (
+          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
+            <span className={`px-3 py-1 rounded-full text-sm font-medium uppercase ${statusColor}`}>
+              {status}
+            </span>
+          </div>
+        )}
+        
+        <Link href={`/property/${id}`}>
+          <div className="h-48 overflow-hidden cursor-pointer">
+            <img
+              src={primaryImage}
+              alt={title}
+              className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+            />
+          </div>
+        </Link>
+        
+        <Badge className="absolute bottom-2 right-2 bg-primary">
+          {forSale && forRent ? "Sale/Rent" : forSale ? "For Sale" : "For Rent"}
+        </Badge>
+      </div>
+      
       <CardContent className="p-4">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="text-lg font-semibold">{property.title}</h3>
-          <Badge variant="secondary" className="bg-orange-100 text-orange-800">
-            {property.price.toLocaleString()} SAR
-          </Badge>
+        <Link href={`/property/${id}`}>
+          <h3 className="text-lg font-semibold mb-2 hover:text-primary cursor-pointer line-clamp-2">
+            {title}
+          </h3>
+        </Link>
+        
+        <div className="flex items-center text-muted-foreground mb-3">
+          <MapPin className="h-4 w-4 mr-1" />
+          <span className="text-sm truncate">{location}</span>
         </div>
-
-        <div className="flex items-center text-muted-foreground mb-2">
-          <MapPin size={16} className="mr-1" />
-          <span className="text-sm">{property.location}</span>
+        
+        <div className="text-xl font-bold text-primary mb-3">
+          {formattedPrice}
         </div>
-
-        <div className="flex justify-between items-center mb-2">
-          <Badge variant={property.listingType === 'sale' ? 'destructive' : 'default'}>
-            {property.listingType === 'sale' ? 'For Sale' : 'For Rent'}
-          </Badge>
-          <span className="text-sm">{property.area} m²</span>
-        </div>
-
-        <div className="flex gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center">
-            <Bed size={16} className="mr-1" />
-            <span>{property.bedrooms} beds</span>
+        
+        <div className="grid grid-cols-3 gap-2 mb-2">
+          <div className="flex items-center text-sm">
+            <Bed className="h-4 w-4 mr-1 text-muted-foreground" />
+            <span>{bedrooms} Beds</span>
           </div>
-          <div className="flex items-center">
-            <Bath size={16} className="mr-1" />
-            <span>{property.bathrooms} baths</span>
+          
+          <div className="flex items-center text-sm">
+            <Bath className="h-4 w-4 mr-1 text-muted-foreground" />
+            <span>{bathrooms} Baths</span>
           </div>
-          <div className="flex items-center">
-            <Square size={16} className="mr-1" />
-            <span>{property.area} m²</span>
+          
+          <div className="flex items-center text-sm">
+            <Ruler className="h-4 w-4 mr-1 text-muted-foreground" />
+            <span>{area} sqm</span>
           </div>
         </div>
       </CardContent>
+      
+      <CardFooter className="px-4 py-3 border-t flex justify-between">
+        <div className="flex items-center text-sm">
+          <Tag className="h-4 w-4 mr-1 text-muted-foreground" />
+          <span className="capitalize">{propertyType}</span>
+        </div>
+        
+        <Link href={`/property/${id}`}>
+          <span className="text-sm font-medium text-primary hover:underline">
+            View Details
+          </span>
+        </Link>
+      </CardFooter>
     </Card>
   );
 }
