@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { EmailTwoFactorAuth } from "@/components/email-2fa";
+import { PhoneTwoFactorAuth } from "@/components/phone-2fa";
 
 const profileSchema = z.object({
   name: z.string().min(3, "Full name must be at least 3 characters"),
@@ -268,6 +269,7 @@ export default function ProfilePage() {
         </Card>
 
         <EmailTwoFactorAuth />
+        <PhoneTwoFactorAuth />
       </div>
     </div>
   );

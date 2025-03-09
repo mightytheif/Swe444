@@ -97,6 +97,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
+
+  // Check if 2FA is required for the user
+  const check2FARequirement = async (userId: string) => {
+    try {
+      const userDoc = await getDoc(doc(db, 'users', userId));
+      const userData = userDoc.data();
+      
+      if (!userData) return { required: false };
+      
+      // Check if either email or SMS 2FA is enabled
+      const email2FAEnabled = userData.twoFactorEnabled || false;
+      const sms2FAEnabled = userData.phoneAuth2FA || false;
+      
+      return {
+        required: email2FAEnabled || sms2FAEnabled,
+        methods: {
+          email: email2FAEnabled,
+          sms: sms2FAEnabled,
+          phoneNumber: userData.phoneNumber || null
+        }
+      };
+    } catch (error) {
+      console.error("Error checking 2FA requirement:", error);
+      return { required: false };
+    }
+  };
+
       toast({
         title: "Welcome back!",
         description: "Successfully logged in",
