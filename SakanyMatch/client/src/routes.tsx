@@ -1,4 +1,3 @@
-
 import { Route, Switch } from "wouter";
 import { lazy, Suspense } from "react";
 import { Loader2 } from "lucide-react";
@@ -18,6 +17,9 @@ const Profile = lazy(() => import("./pages/profile"));
 const AdminDashboard = lazy(() => import("./pages/admin/dashboard"));
 const AdminProperties = lazy(() => import("./pages/admin/properties"));
 const AdminUsers = lazy(() => import("./pages/admin/users"));
+const RegisterPage = lazy(() => import("./pages/register")); // Added registration page
+const SmsVerification = lazy(() => import("./pages/sms-verification")); // Added SMS verification page
+
 
 // Loading component for suspense fallback
 const PageLoader = () => (
@@ -32,23 +34,26 @@ export default function Routes() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/auth" component={AuthLayout} />
-        
+
         <Route path="/properties">
           <Properties />
         </Route>
-        
+
         <Route path="/property/:id">
           {(params) => <Property id={params.id} />}
         </Route>
-        
+
         <ProtectedLandlordRoute path="/properties/add" component={AddProperty} />
-        
+
         <ProtectedRoute path="/profile" component={Profile} />
-        
+
         <ProtectedAdminRoute path="/admin" component={AdminDashboard} />
         <ProtectedAdminRoute path="/admin/properties" component={AdminProperties} />
         <ProtectedAdminRoute path="/admin/users" component={AdminUsers} />
-        
+
+        <Route path="/register" component={RegisterPage} /> {/* Route for registration */}
+        <Route path="/verify/:phoneNumber" component={SmsVerification} /> {/* Route for SMS verification */}
+
         <Route component={NotFound} />
       </Switch>
     </Suspense>
